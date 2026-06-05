@@ -6,7 +6,7 @@
   "refresh": "10s",
   "time": {"from": "now-1h", "to": "now"},
   "panels": [
-    {"type": "timeseries", "title": "E2E span rate", "datasource": {"type": "prometheus", "uid": "mimir"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}, "targets": [{"refId": "A", "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total{service=\"e2e\"}[5m]))", "legendFormat": "{{span_name}}"}]},
-    {"type": "timeseries", "title": "E2E latency p95 (s)", "datasource": {"type": "prometheus", "uid": "mimir"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}, "targets": [{"refId": "A", "expr": "histogram_quantile(0.95, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=\"e2e\"}[5m])))", "legendFormat": "{{span_name}}"}]}
+    {"type": "timeseries", "title": "E2E span rate", "datasource": {"type": "prometheus", "uid": "mimir"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}, "targets": [{"refId": "A", "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total{service=\"browser-e2e\"}[5m]))", "legendFormat": "{{span_name}}"}]},
+    {"type": "timeseries", "title": "E2E latency p95 (s)", "datasource": {"type": "prometheus", "uid": "mimir"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}, "targets": [{"refId": "A", "expr": "histogram_quantile(0.95, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=\"browser-e2e\"}[5m])))", "legendFormat": "{{span_name}}"}]}
   ]
 }
