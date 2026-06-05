@@ -53,7 +53,6 @@ services:
     depends_on: [device-gateway]
     networks: [observability]
   frontend:
-    image: nginx:1.27-alpine
-    volumes: ["./services/frontend:/usr/share/nginx/html:ro"]
+    build: ./services/frontend
     ports: ["8090:80"]
     networks: [observability]
