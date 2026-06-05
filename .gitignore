@@ -1,6 +1,6 @@
-# Screenshot grezzi di sistemi reali: possono contenere dati sensibili.
-# Non committarli: questo repo e' pubblico. Usare solo gli `iot-*` generati dalla demo.
-linkedin/assets/*grafana*.png
+# Materiale editoriale (idee post LinkedIn, articoli blog, case study, assets):
+# tenuto solo in locale, non tracciato. Questo repo e' pubblico.
+
 
 # Dipendenze / build
 node_modules/
@@ -14,6 +14,3 @@ target/
 # Playwright
 test-results/
 playwright-report/
-
-# Screenshot generati (rigenerabili con `make shots`) - decidere se versionarli
-# linkedin/assets/iot-*.png
