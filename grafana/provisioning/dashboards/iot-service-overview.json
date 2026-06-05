@@ -1,0 +1,13 @@
+{
+  "uid": "iot-service-overview",
+  "title": "IoT - Service Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {"type": "timeseries", "title": "Request rate (calls/s) per service", "datasource": {"type": "prometheus", "uid": "mimir"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}, "targets": [{"refId": "A", "expr": "sum by (service) (rate(traces_spanmetrics_calls_total{service!~\"e2e.*\"}[1m]))", "legendFormat": "{{service}}"}]},
+    {"type": "timeseries", "title": "Error rate per service", "datasource": {"type": "prometheus", "uid": "mimir"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}, "targets": [{"refId": "A", "expr": "sum by (service) (rate(traces_spanmetrics_calls_total{status_code=\"STATUS_CODE_ERROR\", service!~\"e2e.*\"}[1m]))", "legendFormat": "{{service}}"}]},
+    {"type": "timeseries", "title": "Latency p95 (s) per service", "datasource": {"type": "prometheus", "uid": "mimir"}, "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}, "targets": [{"refId": "A", "expr": "histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket{service!~\"e2e.*\"}[1m])))", "legendFormat": "{{service}}"}]}
+  ]
+}

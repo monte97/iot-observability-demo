@@ -1,0 +1,14 @@
+<!doctype html><html><body>
+<button id="send">send</button>
+<script>
+window.__send = async function () {
+  const r = await fetch('http://localhost:8088/ingest', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ device_id: 'browser-e2e', value: 1 })
+  });
+  document.title = 'status:' + r.status;
+  return r.status;
+};
+document.getElementById('send').onclick = window.__send;
+</script></body></html>

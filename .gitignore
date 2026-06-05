@@ -1,0 +1,19 @@
+# Screenshot grezzi di sistemi reali: possono contenere dati sensibili.
+# Non committarli: questo repo e' pubblico. Usare solo gli `iot-*` generati dalla demo.
+linkedin/assets/*grafana*.png
+
+# Dipendenze / build
+node_modules/
+**/__pycache__/
+*.pyc
+.venv/
+services/store/.gradle/
+services/store/build/
+target/
+
+# Playwright
+test-results/
+playwright-report/
+
+# Screenshot generati (rigenerabili con `make shots`) - decidere se versionarli
+# linkedin/assets/iot-*.png

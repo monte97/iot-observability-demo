@@ -1,0 +1,8 @@
+multitenancy_enabled: false
+common: { storage: { backend: filesystem, filesystem: { dir: /data } } }
+blocks_storage: { storage_prefix: blocks, filesystem: { dir: /data/blocks } }
+server: { http_listen_port: 9009 }
+ingester:
+  ring:
+    replication_factor: 1   # single-node: senza, il distributor pretende 2+ repliche (HTTP 500)
+limits: { ingestion_rate: 100000 }

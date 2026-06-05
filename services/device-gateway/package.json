@@ -1,0 +1,11 @@
+{
+  "name": "device-gateway",
+  "type": "commonjs",
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.52.0",
+    "@opentelemetry/sdk-node": "^0.54.0",
+    "express": "^4.19.2",
+    "kafkajs": "^2.2.4"
+  }
+}
