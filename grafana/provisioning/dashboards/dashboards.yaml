@@ -1,6 +1,24 @@
 apiVersion: 1
+# Provider Grafana della demo. Sostituisce quello del kickstart perché il suo
+# bind-mount di /etc/grafana/provisioning/dashboards è read-only e non vi si può
+# annidare un file. Qui si dichiarano entrambi i provider:
+#  - Observability: le dashboard di base del kickstart (montate da kickstart in
+#    /var/lib/grafana/dashboards — path stabile definito dal suo compose)
+#  - IoT: le dashboard specifiche della demo (montate in /var/lib/grafana/dashboards-iot)
 providers:
-  - name: iot
-    folder: IoT
+  - name: grafana-lgtm-dashboards
+    orgId: 1
+    folder: "Observability"
     type: file
-    options: { path: /etc/grafana/provisioning/dashboards }
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false
+  - name: iot
+    orgId: 1
+    folder: "IoT"
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards-iot

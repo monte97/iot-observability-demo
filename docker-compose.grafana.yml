@@ -1,0 +1,15 @@
+# Override layer: integra le dashboard IoT della demo nella Grafana fornita dal
+# kickstart-otel-lgtm (importata via include nel docker-compose.yml principale).
+# Tenuto separato perché un servizio importato con `include` non può essere
+# ridefinito nello stesso file, ma può essere esteso da un file di override.
+#
+# Il provider del kickstart monta /etc/grafana/provisioning/dashboards in sola
+# lettura, quindi non vi si può annidare un file: si sostituisce quel mount con
+# il provider combinato della demo (Observability + IoT). Il mount delle dashboard
+# di base del kickstart (/var/lib/grafana/dashboards) resta intatto.
+# I path qui sono relativi alla root della demo (primo file in COMPOSE_FILE).
+services:
+  grafana:
+    volumes:
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards-iot:ro

@@ -1,10 +1,12 @@
 # IoT Observability Demo + Content
 
 Progetto **autonomo e staccabile**: un mini sistema distribuito generico ("dispositivi
-IoT sul campo") strumentato con OpenTelemetry, più tutti i contenuti (case study, blog,
-post) che ne derivano.
+IoT sul campo") strumentato con OpenTelemetry.
 
-Self-contained: copia questa cartella in un repo nuovo e funziona da sola.
+Lo stack di osservabilità LGTM **non è incluso qui**: arriva dal repo
+[`kickstart-otel-lgtm`](https://github.com/monte97/kickstart-otel-lgtm), agganciato come
+git submodule sotto `observability/`. La demo fornisce solo i servizi applicativi e le
+dashboard specifiche del dominio IoT, e si appoggia al collector/backend del kickstart.
 
 ## Architettura
 
@@ -16,37 +18,57 @@ load-gen → device-gateway (Node) →[kafka telemetry.raw]→ normalizer (Pytho
 
 Tre runtime eterogenei cuciti da Kafka; il trace context W3C viaggia negli **header
 dei record Kafka** (inject/extract manuale su Node/Python, automatico via Java agent su
-JVM). Backend LGTM self-contained (OTel Collector → Tempo, Mimir, Loki + Grafana); le
-RED metrics sono derivate dal metrics-generator di Tempo.
+JVM). Backend LGTM dal submodule `kickstart-otel-lgtm` (OTel Collector → Tempo, Mimir,
+Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 
 ## Struttura
 
 ```
 .
-├── docker-compose.yml   # stack LGTM + Kafka + Mongo + 3 servizi + load-gen
-├── Makefile             # up / seed / shots / down
-├── capture.mjs          # cattura screenshot dashboard (iot-*.png)
-├── otel-collector/ tempo/ mimir/ loki/   # config backend
-├── grafana/provisioning/{datasources,dashboards}/   # 3 dashboard generiche
+├── docker-compose.yml          # servizi app (Kafka, Mongo, 3 servizi, load-gen, gateway, frontend)
+│                               #   + include dello stack LGTM dal submodule kickstart
+├── docker-compose.grafana.yml  # override: inietta le dashboard IoT nella Grafana del kickstart
+├── .env                        # COMPOSE_FILE: unisce i due file → `docker compose up` singolo
+├── observability/
+│   └── kickstart-otel-lgtm/    # submodule: stack LGTM (collector, tempo, mimir, loki, grafana)
+├── Makefile                    # up / seed / shots / down
+├── capture.mjs                 # cattura screenshot dashboard (iot-*.png)
+├── grafana/
+│   ├── iot-provider.yaml       # provider Grafana per la cartella "IoT"
+│   └── dashboards/             # 3 dashboard generiche (iot-*.json)
 ├── services/
-│   ├── device-gateway/  # Node/Express, producer Kafka
-│   ├── normalizer/      # Python, consumer/producer
-│   └── store/           # Java plain + Java agent, consumer → Mongo
-├── e2e/                 # test Playwright strumentato
-├── load-gen/            # generatore di traffico sintetico
-└──              # contenuti pubblicabili (blog, linkedin) + assets
+│   ├── device-gateway/         # Node/Express, producer Kafka
+│   ├── normalizer/             # Python, consumer/producer
+│   └── store/                  # Java plain + Java agent, consumer → Mongo
+├── e2e/                        # test Playwright strumentato
+└── load-gen/                   # generatore di traffico sintetico
 ```
+
+> I contenuti editoriali (blog, post LinkedIn, case study) vivono in ``, tenuta
+> **solo in locale e non tracciata** (vedi `.gitignore`).
 
 ## Uso
 
+Il backend LGTM è un git submodule: al primo clone va inizializzato (incluso il suo
+submodule annidato `grafana-dashboards`).
+
 ```bash
+# clone del repo con i submodule
+git clone --recurse-submodules <repo-url>
+# oppure, se già clonato:
+git submodule update --init --recursive
+
 make up      # stack + servizi (build immagini, primo avvio scarica le immagini)
 make seed    # assicura il load-gen attivo (traffico continuo)
 make shots   # genera linkedin/assets/iot-*.png
 make down    # tear down (rimuove i volumi)
 ```
 
-Grafana su `http://localhost:3000` (login anonimo admin), gateway su `:8080/ingest`.
+`make up` legge `.env` (`COMPOSE_FILE`) e unisce automaticamente lo stack della demo e
+quello del kickstart in un solo `docker compose`.
+
+Grafana su `http://localhost:3000` (login anonimo), gateway su `:8080/ingest`. Le
+dashboard della demo sono nella cartella **IoT**.
 
 ## Scopo
 

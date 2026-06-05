@@ -1,0 +1,3 @@
+[submodule "observability/kickstart-otel-lgtm"]
+	path = observability/kickstart-otel-lgtm
+	url = https://github.com/monte97/kickstart-otel-lgtm.git
