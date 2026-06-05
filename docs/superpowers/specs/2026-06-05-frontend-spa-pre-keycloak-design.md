@@ -7,7 +7,7 @@
 
 ## Contesto e motivazione
 
-L'attuale `frontend/index.html` non è una SPA: è una fixture di test da 14 righe (un
+L'attuale `services/frontend/index.html` non è una SPA: è una fixture di test da 14 righe (un
 bottone `send` + `window.__send()` che fa una `POST` cross-origin a `:8088/ingest`),
 esiste solo per creare l'hop "browser" nella trace distribuita guidata dall'e2e Playwright.
 
@@ -49,8 +49,8 @@ vita dei componenti**.
 - **Stato:** modulo `store.js` con `reactive()` (niente Pinia — YAGNI).
 - **Build & serve:** Dockerfile multi-stage (`node` builda → `dist/` copiato in `nginx`).
   Il servizio `frontend` in `docker-compose.yml` passa da `image: nginx + volume mount` a
-  **`build: ./frontend`**, mantenendo `ports: ["8090:80"]` e `networks: [observability]`.
-- **nginx SPA fallback:** `frontend/nginx.conf` con `try_files $uri /index.html;` (serve a
+  **`build: ./services/frontend`**, mantenendo `ports: ["8090:80"]` e `networks: [observability]`.
+- **nginx SPA fallback:** `services/frontend/nginx.conf` con `try_files $uri /index.html;` (serve a
   router e `/callback` per i deep-link).
 - **`window.__send` decoupled:** assegnato in `main.js` subito dopo il mount, basato su
   `api.send()` con payload e2e-default `{ device_id: 'browser-e2e', value: 1 }`.
@@ -58,7 +58,7 @@ vita dei componenti**.
 ## Architettura / layout file
 
 ```
-frontend/
+services/frontend/
   index.html              # entry Vite (#app)
   package.json            # versioni pinnate
   vite.config.js
@@ -133,7 +133,7 @@ frontend/
 
 ## Criteri di accettazione
 
-1. SPA Vue+Vite+Router servita su `:8090` via build multi-stage (compose `build: ./frontend`).
+1. SPA Vue+Vite+Router servita su `:8090` via build multi-stage (compose `build: ./services/frontend`).
 2. Viste Send + History + Callback(stub) e header con stato utente.
 3. `window.__send()` ritorna `202` e l'e2e Playwright passa **senza modifiche al test**.
 4. Trace distribuita intatta (verificata su Tempo).

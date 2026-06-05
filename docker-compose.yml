@@ -54,6 +54,6 @@ services:
     networks: [observability]
   frontend:
     image: nginx:1.27-alpine
-    volumes: ["./frontend:/usr/share/nginx/html:ro"]
+    volumes: ["./services/frontend:/usr/share/nginx/html:ro"]
     ports: ["8090:80"]
     networks: [observability]

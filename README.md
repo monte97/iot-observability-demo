@@ -39,7 +39,8 @@ Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 │   ├── device-gateway/         # Node/Express, producer Kafka
 │   ├── normalizer/             # Python, consumer/producer
 │   ├── store/                  # Java plain + Java agent, consumer → Mongo
-│   └── load-gen/               # generatore di traffico sintetico (busybox + gen.sh)
+│   ├── load-gen/               # generatore di traffico sintetico (busybox + gen.sh)
+│   └── frontend/               # SPA statica / fixture e2e (nginx :8090)
 └── e2e/                        # test Playwright strumentato
 ```
 
@@ -85,7 +86,7 @@ Il demo riproduce **fedelmente** due war story ricorrenti del tracing distribuit
 stack eterogeneo:
 
 - **Bug #3 — propagazione browser → gateway con CORS preflight su `traceparent`.**
-  Una SPA statica (`frontend/`, su origin `:8090`) chiama il backend attraverso un
+  Una SPA statica (`services/frontend/`, su origin `:8090`) chiama il backend attraverso un
   gateway Nginx (`gateway/`, su origin `:8088`) che fa reverse proxy a `device-gateway`.
   La fetch cross-origin porta l'header `traceparent` per propagare la trace dal browser;
   poiché `traceparent` **non** è CORS-safelisted, scatta un preflight `OPTIONS`. Il
