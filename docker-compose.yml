@@ -42,7 +42,7 @@ services:
     networks: [observability]
   load-gen:
     image: busybox:1.36
-    volumes: ["./load-gen/gen.sh:/gen.sh:ro"]
+    volumes: ["./services/load-gen/gen.sh:/gen.sh:ro"]
     command: ["sh", "/gen.sh"]
     depends_on: [device-gateway]
     networks: [observability]

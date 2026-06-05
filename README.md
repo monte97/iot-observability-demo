@@ -30,18 +30,17 @@ Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 ├── docker-compose.grafana.yml  # override: inietta le dashboard IoT nella Grafana del kickstart
 ├── .env                        # COMPOSE_FILE: unisce i due file → `docker compose up` singolo
 ├── observability/
+│   ├── grafana/                # dashboard IoT della demo, iniettate nella Grafana del kickstart
+│   │   ├── dashboards/         # 3 dashboard generiche (iot-*.json)
+│   │   └── provisioning/dashboards/dashboards.yaml  # provider combinato (Observability + IoT)
 │   └── kickstart-otel-lgtm/    # submodule: stack LGTM (collector, tempo, mimir, loki, grafana)
-├── Makefile                    # up / seed / shots / down
-├── capture.mjs                 # cattura screenshot dashboard (iot-*.png)
-├── grafana/
-│   ├── iot-provider.yaml       # provider Grafana per la cartella "IoT"
-│   └── dashboards/             # 3 dashboard generiche (iot-*.json)
+├── Makefile                    # up / seed / down
 ├── services/
 │   ├── device-gateway/         # Node/Express, producer Kafka
 │   ├── normalizer/             # Python, consumer/producer
-│   └── store/                  # Java plain + Java agent, consumer → Mongo
-├── e2e/                        # test Playwright strumentato
-└── load-gen/                   # generatore di traffico sintetico
+│   ├── store/                  # Java plain + Java agent, consumer → Mongo
+│   └── load-gen/               # generatore di traffico sintetico (busybox + gen.sh)
+└── e2e/                        # test Playwright strumentato
 ```
 
 > I contenuti editoriali (blog, post LinkedIn, case study) vivono in ``, tenuta
@@ -60,7 +59,6 @@ git submodule update --init --recursive
 
 make up      # stack + servizi (build immagini, primo avvio scarica le immagini)
 make seed    # assicura il load-gen attivo (traffico continuo)
-make shots   # genera linkedin/assets/iot-*.png
 make down    # tear down (rimuove i volumi)
 ```
 
