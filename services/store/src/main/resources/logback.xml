@@ -1,0 +1,18 @@
+<configuration>
+  <!-- Console appender: i log restano visibili in `docker logs`.
+       In parallelo il Java agent OTel intercetta gli eventi logback e li
+       esporta via OTLP a Loki, con trace_id/span_id iniettati. -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level %logger{20} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Kafka e Mongo sono verbosi a INFO/DEBUG: alza la soglia a WARN. -->
+  <logger name="org.apache.kafka" level="WARN"/>
+  <logger name="org.mongodb" level="WARN"/>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>

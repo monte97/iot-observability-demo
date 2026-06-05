@@ -6,6 +6,8 @@ repositories { mavenCentral() }
 dependencies {
   implementation 'org.apache.kafka:kafka-clients:3.8.0'
   implementation 'org.mongodb:mongodb-driver-sync:5.2.0'
-  implementation 'org.slf4j:slf4j-simple:2.0.13'
+  // logback (non slf4j-simple): è uno dei backend che l'appender instrumentation
+  // del Java agent intercetta, così i log vengono esportati via OTLP con trace_id.
+  implementation 'ch.qos.logback:logback-classic:1.5.12'
 }
 application { mainClass = 'demo.Store' }

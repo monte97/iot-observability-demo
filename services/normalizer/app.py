@@ -1,6 +1,9 @@
-import json, os
+import json, os, logging
 from confluent_kafka import Consumer, Producer
 from opentelemetry import trace, propagate, context
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("normalizer")
 
 tracer = trace.get_tracer("normalizer")
 broker = os.environ.get("KAFKA_BROKER", "kafka:9092")
@@ -17,6 +20,9 @@ while True:
     with tracer.start_as_current_span("normalize", context=ctx):
         data = json.loads(msg.value())
         data["normalized"] = True
+        # Log dentro lo span: l'auto-instrumentation aggancia un handler OTLP al
+        # root logger e inietta trace_id/span_id, abilitando la correlazione.
+        log.info("normalized device_id=%s", data.get("device_id"))
         # span PRODUCER esplicito: confluent-kafka non e' auto-strumentato dal distro,
         # cosi' la produce su telemetry.clean compare come span (e nelle span-metrics).
         with tracer.start_as_current_span(
