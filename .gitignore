@@ -1,7 +1,3 @@
-# Materiale editoriale (idee post LinkedIn, articoli blog, case study, assets):
-# tenuto solo in locale, non tracciato. Questo repo e' pubblico.
-
-
 # Dipendenze / build
 node_modules/
 **/__pycache__/

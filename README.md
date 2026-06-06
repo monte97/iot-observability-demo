@@ -44,9 +44,6 @@ Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 └── e2e/                        # test Playwright strumentato
 ```
 
-> I contenuti editoriali (blog, post LinkedIn, case study) vivono in ``, tenuta
-> **solo in locale e non tracciata** (vedi `.gitignore`).
-
 ## Uso
 
 Il backend LGTM è un git submodule: al primo clone va inizializzato (incluso il suo
