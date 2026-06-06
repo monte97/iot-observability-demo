@@ -10,6 +10,10 @@ const app = express();
 app.use(express.json());
 
 app.post('/ingest', async (req, res) => {
+  // DEMO: /ingest è volutamente NON protetto. Il frontend allega un Bearer quando
+  // l'utente è loggato, ma qui non lo validiamo (nessun controllo firma/issuer/exp):
+  // serve a mostrare la propagazione e la cucitura della trace, non come authZ.
+  // In produzione qui andrebbe la verifica del JWT (JWKS Keycloak) + 401 se assente.
   const headers = {};
   propagation.inject(context.active(), headers);
   await producer.send({

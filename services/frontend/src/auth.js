@@ -32,7 +32,15 @@ export const auth = reactive({
       this.isAuthenticated = false;
       this.user = null;
     };
-    kc.onTokenExpired = () => kc.updateToken(30).catch(() => kc.login());
+    // Se il refresh fallisce (sessione SSO scaduta o Keycloak irraggiungibile)
+    // degradiamo ad anonimo, coerentemente con token(): il prossimo invio parte
+    // senza Bearer e l'utente può ri-loggarsi. NON forziamo un redirect di login,
+    // che sbatterebbe l'utente fuori da una pagina qualsiasi.
+    kc.onTokenExpired = () =>
+      kc.updateToken(30).catch(() => {
+        this.isAuthenticated = false;
+        this.user = null;
+      });
   },
 
   login() {

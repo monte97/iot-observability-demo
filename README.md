@@ -117,16 +117,32 @@ browser: un waterfall `frontend-spa → keycloak (token endpoint)`.
 
 Dettagli che contano (e diventano contenuto):
 
-- **keycloak-js usa XHR** per la `POST /token`: serve la `XMLHttpRequestInstrumentation`
-  (oltre alla `FetchInstrumentation`), o il `traceparent` non viene iniettato e la cucitura
-  non avviene.
-- **Flush su `pagehide`/`visibilitychange`** + batch corto in `tracing.js`: lo span del
-  token, creato attorno al redirect di login, andrebbe perso col `BatchSpanProcessor` di
-  default (lo si esporta prima che il browser navighi via).
-- **`check-sso` non forzante**: la SPA resta usabile da anonima (load-gen ed e2e girano
-  senza token).
-- **Trade-off dichiarato**: public client = access token nel browser, accettabile per un
-  *demo*; in **produzione** si userebbe un **BFF** (cookie httpOnly). Login demo: `demo`/`demo`.
+- **`parentbased_always_on` lato Keycloak**: fa rispettare il `traceparent` in ingresso, così
+  lo span server di Keycloak diventa figlio dello span del browser invece di aprire una trace
+  nuova. È il pezzo lato server della cucitura.
+- **Propagazione via `FetchInstrumentation`**: keycloak-js 26.x usa `window.fetch` per la
+  `POST /token`; essendo same-origin (`/auth`) il `traceparent` è iniettato di default, niente
+  CORS. (Non serve l'XHR instrumentation: il token endpoint passa per `fetch`.)
+- **Flush su `pagehide`/`visibilitychange`** + batch corto in `tracing.js`: lo span del token,
+  creato attorno al redirect di login, andrebbe perso col `BatchSpanProcessor` di default → lo
+  si esporta prima che il browser navighi via. È il pezzo lato client della cucitura.
+- **`check-sso` non forzante**: la SPA resta usabile da anonima (load-gen ed e2e girano senza
+  token); il mount avviene subito e l'auth si inizializza in background.
+
+Trade-off e semplificazioni **dichiarati** (è un demo didattico):
+
+- **Public client**: l'access token vive nel browser (XSS = esfiltrazione). In **produzione**
+  si userebbe un **BFF** (cookie `httpOnly`); il pattern di tracing resta identico, cambia solo
+  *dove* nasce lo span client.
+- **`/ingest` non valida il token**: il Bearer mostra la propagazione, non fa authZ. In
+  produzione l'endpoint verificherebbe il JWT (JWKS Keycloak).
+- **H2 in-memory** (`start-dev`): il realm è re-importato a ogni avvio (riproducibile), ma lo
+  stato runtime (utenti/sessioni) è effimero. Produzione: DB esterno + `start`.
+- **Primo avvio ~30s**: Keycloak importa il realm; il login funziona dopo (la SPA resta usabile
+  anonima nel frattempo). Con `parentbased_always_on` le tracce *keycloak-only* allo startup
+  sono attese — filtra per `service.name` in Grafana.
+
+Login demo: `demo`/`demo`. Admin: `:8090/auth/admin` (`admin`/`admin`).
 
 ### Scelte di semplificazione
 

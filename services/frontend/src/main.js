@@ -11,13 +11,9 @@ import { auth } from './auth';
 // l'e2e troverebbe comunque il trigger. Payload e2e-default.
 window.__send = () => send({ device_id: 'browser-e2e', value: 1 });
 
-// Inizializza l'auth (check-sso, non forzante) prima del mount; se Keycloak non
-// è raggiungibile, proseguiamo da anonimi senza bloccare l'app.
-(async () => {
-  try {
-    await auth.init();
-  } catch (e) {
-    console.warn('[auth] init fallita, proseguo da anonimo', e);
-  }
-  createApp(App).use(router).mount('#app');
-})();
+// Monta SUBITO: la SPA è usabile da anonima, quindi non aspettiamo l'auth per
+// mostrarla (se Keycloak è lento/giù, il check-sso può bloccarsi ~10s e la pagina
+// resterebbe bianca). L'auth gira in background e, al completamento, lo stato
+// reactive `auth` aggiorna l'header (sign in/out).
+createApp(App).use(router).mount('#app');
+auth.init().catch((e) => console.warn('[auth] init fallita, resto anonimo', e));
