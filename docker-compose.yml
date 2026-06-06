@@ -46,13 +46,29 @@ services:
     command: ["sh", "/gen.sh"]
     depends_on: [device-gateway]
     networks: [observability]
-  gateway:
-    image: nginx:1.27-alpine
-    volumes: ["./gateway/default.conf:/etc/nginx/conf.d/default.conf:ro"]
-    ports: ["8088:80"]
-    depends_on: [device-gateway]
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Dietro l'edge nginx della SPA, servito sotto /auth (same-origin :8090)
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_HOSTNAME: http://localhost:8090/auth
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY_HEADERS: xforwarded
+      # Tracing OTel: parentbased rispetta il traceparent in ingresso dalla POST
+      # /token del browser, così lo span server di Keycloak si CUCE con la trace.
+      KC_TRACING_ENABLED: "true"
+      KC_TRACING_ENDPOINT: http://otel-collector:4317
+      KC_TRACING_PROTOCOL: grpc
+      KC_TRACING_SAMPLER_TYPE: parentbased_always_on
+      KC_TRACING_RESOURCE_ATTRIBUTES: service.name=keycloak
+    volumes: ["./keycloak/realm-iot.json:/opt/keycloak/data/import/realm-iot.json:ro"]
+    depends_on: [otel-collector]
     networks: [observability]
   frontend:
     build: ./services/frontend
     ports: ["8090:80"]
+    depends_on: [keycloak]
     networks: [observability]

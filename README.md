@@ -25,7 +25,7 @@ Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 
 ```
 .
-├── docker-compose.yml          # servizi app (Kafka, Mongo, 3 servizi, load-gen, gateway, frontend)
+├── docker-compose.yml          # servizi app (Kafka, Mongo, 3 servizi, load-gen, frontend, keycloak)
 │                               #   + include dello stack LGTM dal submodule kickstart
 ├── docker-compose.grafana.yml  # override: inietta le dashboard IoT nella Grafana del kickstart
 ├── .env                        # COMPOSE_FILE: unisce i due file → `docker compose up` singolo
@@ -40,7 +40,8 @@ Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 │   ├── normalizer/             # Python, consumer/producer
 │   ├── store/                  # Java plain + Java agent, consumer → Mongo
 │   ├── load-gen/               # generatore di traffico sintetico (busybox + gen.sh)
-│   └── frontend/               # SPA Vue/Vite + OTel Web (nginx :8090: serve SPA + proxa /ingest e /v1)
+│   └── frontend/               # SPA Vue/Vite + OTel Web + auth Keycloak (nginx :8090: serve SPA + proxa /ingest, /v1, /auth)
+├── keycloak/                   # realm-iot.json (client public PKCE, importato all'avvio)
 └── e2e/                        # test Playwright strumentato
 ```
 
@@ -63,8 +64,9 @@ make down    # tear down (rimuove i volumi)
 `make up` legge `.env` (`COMPOSE_FILE`) e unisce automaticamente lo stack della demo e
 quello del kickstart in un solo `docker compose`.
 
-Grafana su `http://localhost:3000` (login anonimo), gateway su `:8080/ingest`. Le
-dashboard della demo sono nella cartella **IoT**.
+SPA su `http://localhost:8090` (con login Keycloak, utente `demo`/`demo`), Grafana su
+`http://localhost:3000` (login anonimo), device-gateway su `:8080/ingest`. Le dashboard
+della demo sono nella cartella **IoT**. Admin Keycloak su `:8090/auth/admin` (`admin`/`admin`).
 
 ## Scopo
 
@@ -90,7 +92,8 @@ stack eterogeneo:
   cui il demo è passato a single-origin**: la nginx della SPA (`services/frontend/`) serve
   la SPA *e* proxa `/ingest` (e l'export OTLP `/v1/`) → niente cross-origin, niente
   preflight. Il racconto completo — frontend instrumentation + le due gotcha CORS — è nel
-  case study dedicato.
+  case study dedicato. (Quel gateway cross-origin separato è stato poi **ritirato**: la
+  stessa scelta single-origin si è estesa anche all'auth — vedi *Auth con Keycloak* sotto.)
 - **`SimpleSpanProcessor` nei worker di test.** Il setup OTel
   dell'E2E (`e2e/otel.setup.js`) usa `SimpleSpanProcessor` (esportazione sincrona per
   span) anziché `BatchSpanProcessor`: un processo di test che termina in fretta perderebbe
@@ -102,6 +105,28 @@ L'E2E passa da un **browser reale** (`page.goto :8090` → `window.__send()` →
 reale genera già la traccia `frontend-spa → device-gateway → normalizer → store`. Il test
 inietta il proprio `traceparent` solo per radicare la trace del *test*. In Tempo una singola
 trace attraversa il browser e i 3 runtime: prova della propagazione end-to-end.
+
+## Auth con Keycloak (tracing attraverso l'auth)
+
+La SPA si autentica con **Keycloak** via `keycloak-js` (OIDC Authorization Code + PKCE,
+public client). Keycloak è servito **same-origin** dietro l'edge nginx (`/auth`): la stessa
+scelta single-origin applicata all'auth. Così la `POST /token` del browser resta same-origin,
+il `traceparent` viaggia senza CORS, e — con Keycloak strumentato OTel (`KC_TRACING_*`,
+sampler `parentbased_always_on`) — lo span server di Keycloak si **cuce** con la trace del
+browser: un waterfall `frontend-spa → keycloak (token endpoint)`.
+
+Dettagli che contano (e diventano contenuto):
+
+- **keycloak-js usa XHR** per la `POST /token`: serve la `XMLHttpRequestInstrumentation`
+  (oltre alla `FetchInstrumentation`), o il `traceparent` non viene iniettato e la cucitura
+  non avviene.
+- **Flush su `pagehide`/`visibilitychange`** + batch corto in `tracing.js`: lo span del
+  token, creato attorno al redirect di login, andrebbe perso col `BatchSpanProcessor` di
+  default (lo si esporta prima che il browser navighi via).
+- **`check-sso` non forzante**: la SPA resta usabile da anonima (load-gen ed e2e girano
+  senza token).
+- **Trade-off dichiarato**: public client = access token nel browser, accettabile per un
+  *demo*; in **produzione** si userebbe un **BFF** (cookie httpOnly). Login demo: `demo`/`demo`.
 
 ### Scelte di semplificazione
 

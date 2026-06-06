@@ -1,0 +1,10 @@
+<!doctype html>
+<html>
+  <body>
+    <script>
+      // Usato da keycloak-js per il check-sso silenzioso in iframe: rimanda
+      // l'URL (con i frammenti OIDC) alla finestra padre.
+      parent.postMessage(location.href, location.origin);
+    </script>
+  </body>
+</html>

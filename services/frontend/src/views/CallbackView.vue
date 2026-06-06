@@ -1,7 +1,7 @@
 <template>
   <section>
     <h2>OIDC Callback</h2>
-    <p>Nessun login configurato — placeholder per il redirect OIDC futuro (Keycloak).</p>
+    <p>Login gestito da Keycloak (Authorization Code + PKCE) via keycloak-js. Reindirizzamento in corso…</p>
     <RouterLink to="/">Torna a Send</RouterLink>
   </section>
 </template>

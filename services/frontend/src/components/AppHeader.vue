@@ -10,7 +10,10 @@ import { auth } from '../auth';
       <RouterLink to="/history">History</RouterLink>
     </nav>
     <span class="user">
-      <template v-if="auth.isAuthenticated">{{ auth.user }}</template>
+      <template v-if="auth.isAuthenticated">
+        {{ auth.user }}
+        <button type="button" @click="auth.logout()">sign out</button>
+      </template>
       <button v-else type="button" @click="auth.login()">sign in</button>
     </span>
   </header>
