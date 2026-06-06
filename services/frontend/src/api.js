@@ -1,13 +1,13 @@
 import { record } from './store';
 
-// Cross-origin verso il gateway Nginx (:8088), che fa reverse-proxy a
-// device-gateway. È il "seam" dell'auth: qui in futuro si aggiungerà
-// Authorization: Bearer. NON impostiamo altri header oltre a content-type, così
-// il traceparent iniettato a livello di browser-context (e2e) sopravvive.
-const GATEWAY = 'http://localhost:8088/ingest';
+// Same-origin: SPA e API condividono l'origin :8090. La nginx della SPA (edge)
+// proxa /ingest al device-gateway, quindi niente CORS. È il "seam" dell'auth:
+// qui in futuro si aggiungerà Authorization: Bearer (Keycloak). Path relativo,
+// così funziona dietro qualsiasi host/porta senza riconfigurare il client.
+const INGEST = '/ingest';
 
 export async function send(payload) {
-  const res = await fetch(GATEWAY, {
+  const res = await fetch(INGEST, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),

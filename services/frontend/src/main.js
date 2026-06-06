@@ -1,3 +1,4 @@
+import './tracing'; // OTel Web: deve girare per primo (patcha window.fetch)
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';

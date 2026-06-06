@@ -13,12 +13,12 @@ dashboard specifiche del dominio IoT, e si appoggia al collector/backend del kic
 ```
 load-gen → device-gateway (Node) →[kafka telemetry.raw]→ normalizer (Python)
                                        →[kafka telemetry.clean]→ store (Java) → MongoDB
-   e2e (Playwright strumentato) ─┘ colpisce il gateway
+   SPA nel browser (OTel Web, single-origin :8090) ─┘ entra nella stessa traccia
 ```
 
 Tre runtime eterogenei cuciti da Kafka; il trace context W3C viaggia negli **header
 dei record Kafka** (inject/extract manuale su Node/Python, automatico via Java agent su
-JVM). Backend LGTM dal submodule `kickstart-otel-lgtm` (OTel Collector → Tempo, Mimir,
+JVM), e ora anche dal **browser** via OTel Web nella SPA. Backend LGTM dal submodule `kickstart-otel-lgtm` (OTel Collector → Tempo, Mimir,
 Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 
 ## Struttura
@@ -40,7 +40,7 @@ Loki + Grafana); le RED metrics sono derivate dal metrics-generator di Tempo.
 │   ├── normalizer/             # Python, consumer/producer
 │   ├── store/                  # Java plain + Java agent, consumer → Mongo
 │   ├── load-gen/               # generatore di traffico sintetico (busybox + gen.sh)
-│   └── frontend/               # SPA statica / fixture e2e (nginx :8090)
+│   └── frontend/               # SPA Vue/Vite + OTel Web (nginx :8090: serve SPA + proxa /ingest e /v1)
 └── e2e/                        # test Playwright strumentato
 ```
 
@@ -85,27 +85,26 @@ dashboard popolate e 3 screenshot puliti generati.
 Il demo riproduce **fedelmente** due war story ricorrenti del tracing distribuito su
 stack eterogeneo:
 
-- **Bug #3 — propagazione browser → gateway con CORS preflight su `traceparent`.**
-  Una SPA statica (`services/frontend/`, su origin `:8090`) chiama il backend attraverso un
-  gateway Nginx (`gateway/`, su origin `:8088`) che fa reverse proxy a `device-gateway`.
-  La fetch cross-origin porta l'header `traceparent` per propagare la trace dal browser;
-  poiché `traceparent` **non** è CORS-safelisted, scatta un preflight `OPTIONS`. Il
-  `gateway/default.conf` elenca `traceparent`/`tracestate` in `Access-Control-Allow-Headers`,
-  così il preflight passa e il context attraversa l'hop. Rimuovendo quell'header il
-  preflight non autorizza più `traceparent`, la fetch fallisce in CORS (`Failed to fetch`)
-  e la trace si spezza al primo hop — esattamente il sintomo del bug originale.
+- **Propagazione dal browser e la gotcha CORS sul `traceparent`.** Strumentando la SPA con
+  OTel Web, il `traceparent` deve viaggiare dal browser fino al backend. Nella versione
+  cross-origin (SPA `:8090` → gateway `:8088`) quell'header **non** è CORS-safelisted →
+  scatta un preflight `OPTIONS`; senza `traceparent` in `Access-Control-Allow-Headers` la
+  fetch fallisce (`Failed to fetch`) e la trace si spezza al primo hop. **È il motivo per
+  cui il demo è passato a single-origin**: la nginx della SPA (`services/frontend/`) serve
+  la SPA *e* proxa `/ingest` (e l'export OTLP `/v1/`) → niente cross-origin, niente
+  preflight. Il racconto completo — frontend instrumentation + le due gotcha CORS — è nel
+  case study dedicato.
 - **`SimpleSpanProcessor` nei worker di test.** Il setup OTel
   dell'E2E (`e2e/otel.setup.js`) usa `SimpleSpanProcessor` (esportazione sincrona per
   span) anziché `BatchSpanProcessor`: un processo di test che termina in fretta perderebbe
   gli span bufferizzati in un batch non flushato. Niente più `forceFlush`; basta uno
   `sdk.shutdown()` pulito a fine suite.
 
-L'E2E passa da un **browser reale** (`page.goto` → `window.__send()` → fetch cross-origin
-al gateway): il `traceparent` costruito dallo span root del test viene iniettato via
-`setExtraHTTPHeaders`, sopravvive al preflight CORS e viene estratto dall'auto-instrumentation
-HTTP di `device-gateway`, che diventa così figlio dello span `e2e`. In Tempo una singola
-trace contiene `e2e`, `device-gateway`, `normalizer` e `store`: prova della propagazione
-end-to-end browser → gateway → backend.
+L'E2E passa da un **browser reale** (`page.goto :8090` → `window.__send()` → fetch
+**same-origin** a `/ingest`): la SPA ora si auto-strumenta (OTel Web), quindi una richiesta
+reale genera già la traccia `frontend-spa → device-gateway → normalizer → store`. Il test
+inietta il proprio `traceparent` solo per radicare la trace del *test*. In Tempo una singola
+trace attraversa il browser e i 3 runtime: prova della propagazione end-to-end.
 
 ### Scelte di semplificazione
 
