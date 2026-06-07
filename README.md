@@ -131,7 +131,8 @@ Dettagli che contano (e diventano contenuto):
   via client-credentials.
 
 **Validazione (chi può scrivere).** Il `device-gateway` valida il JWT — firma + issuer +
-scadenza, via JWKS — su `POST /ingest`: senza token valido → `401`. Due flussi di emissione:
+audience (`aud=iot-gateway`, che il token sia destinato a lui) + scadenza, via JWKS — su
+`POST /ingest`: senza token valido → `401`. Due flussi di emissione:
 il **browser** ottiene il token via Authorization Code (client `iot-frontend`), i **device**
 (es. il load-gen) via **client-credentials** (service account `iot-device`; a tema IoT: i
 device hanno un'identità). Split-horizon: il gateway scarica le chiavi dall'URL **interno**

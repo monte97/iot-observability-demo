@@ -12,17 +12,20 @@ app.use(express.json());
 // Validazione del JWT contro Keycloak. Split-horizon: il JWKS si scarica dall'URL
 // INTERNO (keycloak:8080, raggiungibile nella rete docker), ma l'issuer atteso è
 // quello PUBBLICO (:8090/auth) perché è l'URL che browser e device vedono e che
-// finisce nel claim `iss` del token. Verifichiamo firma + issuer + scadenza.
+// finisce nel claim `iss` del token. Verifichiamo firma + issuer + audience +
+// scadenza: l'audience (`aud`) garantisce che il token sia stato emesso PER questo
+// gateway, non un token qualsiasi del realm (un altro client o un ID-token).
 const JWKS = createRemoteJWKSet(
   new URL(process.env.JWKS_URI || 'http://keycloak:8080/auth/realms/iot-demo/protocol/openid-connect/certs'),
 );
 const ISSUER = process.env.OIDC_ISSUER || 'http://localhost:8090/auth/realms/iot-demo';
+const AUDIENCE = process.env.OIDC_AUDIENCE || 'iot-gateway';
 
 async function requireAuth(req, res, next) {
   const m = (req.headers.authorization || '').match(/^Bearer (.+)$/i);
   if (!m) return res.status(401).json({ error: 'missing bearer token' });
   try {
-    const { payload } = await jwtVerify(m[1], JWKS, { issuer: ISSUER });
+    const { payload } = await jwtVerify(m[1], JWKS, { issuer: ISSUER, audience: AUDIENCE });
     req.sub = payload.sub; // service account (device) o utente (browser)
     next();
   } catch (e) {

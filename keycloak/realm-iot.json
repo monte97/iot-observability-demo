@@ -16,7 +16,15 @@
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:8090/*"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "iot-gateway-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "iot-gateway", "id.token.claim": "false", "access.token.claim": "true" }
+        }
+      ]
     },
     {
       "clientId": "iot-device",
@@ -26,7 +34,15 @@
       "secret": "device-secret",
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "iot-gateway-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "iot-gateway", "id.token.claim": "false", "access.token.claim": "true" }
+        }
+      ]
     }
   ],
   "users": [
