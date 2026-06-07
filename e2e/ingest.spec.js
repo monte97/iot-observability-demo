@@ -2,20 +2,30 @@ const { test, expect } = require('@playwright/test');
 const { trace } = require('@opentelemetry/api');
 const { sdk } = require('./otel.setup');
 
-test('ingest end-to-end (browser SPA -> backend, single-origin)', async ({ page }) => {
+// /ingest ora valida il JWT (Keycloak). Il test agisce come un "device": ottiene
+// un token via client-credentials (client confidenziale iot-device) e lo allega.
+async function deviceToken() {
+  const res = await fetch('http://localhost:8090/auth/realms/iot-demo/protocol/openid-connect/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials&client_id=iot-device&client_secret=device-secret',
+  });
+  if (!res.ok) throw new Error('token request failed: ' + res.status);
+  return (await res.json()).access_token;
+}
+
+test('ingest end-to-end (browser SPA -> backend, single-origin, autenticato)', async ({ page }) => {
   const tracer = trace.getTracer('e2e');
+  const token = await deviceToken();
 
   await tracer.startActiveSpan('e2e:ingest', async (span) => {
-    // Build the W3C traceparent from the root span's context and inject it into
-    // the browser's requests. The SPA fetch is now same-origin (:8090/ingest,
-    // proxied to device-gateway), so there's no CORS preflight. The header is
-    // extracted by device-gateway's HTTP auto-instrumentation, making the
-    // backend trace a child of this test span.
-    // NOTE: the SPA now self-instruments (OTel Web), so this manual injection is
-    // redundant for real users — kept here only to root the *test* trace.
+    // traceparent per radicare la trace del *test*; Authorization perché /ingest
+    // ora richiede un JWT valido (il device si autentica via client-credentials).
+    // La SPA si auto-strumenta (OTel Web), quindi l'iniezione del traceparent è
+    // ridondante per i veri utenti — qui serve solo a radicare la trace del test.
     const sc = span.spanContext();
     const tp = `00-${sc.traceId}-${sc.spanId}-0${sc.traceFlags.toString(16)}`;
-    await page.context().setExtraHTTPHeaders({ traceparent: tp });
+    await page.context().setExtraHTTPHeaders({ traceparent: tp, Authorization: `Bearer ${token}` });
 
     // Real browser hitting the SPA on :8090 (same-origin: SPA + /ingest proxy).
     await page.goto('http://localhost:8090');

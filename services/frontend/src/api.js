@@ -5,9 +5,8 @@ import { auth } from './auth';
 // proxa /ingest al device-gateway, quindi niente CORS. Path relativo, così
 // funziona dietro qualsiasi host/porta. Se l'utente è loggato (Keycloak),
 // allega l'access token come Authorization: Bearer; da anonimo non lo allega.
-// NB (demo): il device-gateway NON valida il token — il Bearer serve a mostrare
-// la propagazione/cucitura della trace, non come authZ. In produzione l'endpoint
-// verificherebbe la firma JWT (JWKS Keycloak) e rifiuterebbe le richieste anonime.
+// Il device-gateway VALIDA il token (firma + issuer + scadenza, via JWKS): senza
+// un Bearer valido l'invio riceve 401, quindi da anonimo bisogna prima loggarsi.
 const INGEST = '/ingest';
 
 export async function send(payload) {

@@ -126,16 +126,24 @@ Dettagli che contano (e diventano contenuto):
 - **Flush su `pagehide`/`visibilitychange`** + batch corto in `tracing.js`: lo span del token,
   creato attorno al redirect di login, andrebbe perso col `BatchSpanProcessor` di default → lo
   si esporta prima che il browser navighi via. È il pezzo lato client della cucitura.
-- **`check-sso` non forzante**: la SPA resta usabile da anonima (load-gen ed e2e girano senza
-  token); il mount avviene subito e l'auth si inizializza in background.
+- **`check-sso` non forzante**: la SPA è navigabile da anonima e il mount avviene subito (auth
+  in background). Ma **inviare** dati richiede un token: il browser via login utente, i device
+  via client-credentials.
+
+**Validazione (chi può scrivere).** Il `device-gateway` valida il JWT — firma + issuer +
+scadenza, via JWKS — su `POST /ingest`: senza token valido → `401`. Due flussi di emissione:
+il **browser** ottiene il token via Authorization Code (client `iot-frontend`), i **device**
+(es. il load-gen) via **client-credentials** (service account `iot-device`; a tema IoT: i
+device hanno un'identità). Split-horizon: il gateway scarica le chiavi dall'URL **interno**
+(`keycloak:8080`) ma verifica l'issuer **pubblico** (`:8090/auth`), quello nel claim `iss`.
 
 Trade-off e semplificazioni **dichiarati** (è un demo didattico):
 
-- **Public client**: l'access token vive nel browser (XSS = esfiltrazione). In **produzione**
-  si userebbe un **BFF** (cookie `httpOnly`); il pattern di tracing resta identico, cambia solo
-  *dove* nasce lo span client.
-- **`/ingest` non valida il token**: il Bearer mostra la propagazione, non fa authZ. In
-  produzione l'endpoint verificherebbe il JWT (JWKS Keycloak).
+- **Public client** (browser): l'access token vive nel browser (XSS = esfiltrazione). In
+  **produzione** si userebbe un **BFF** (cookie `httpOnly`); il pattern di tracing resta
+  identico, cambia solo *dove* nasce lo span client.
+- **Secret del device in chiaro**: `iot-device` usa un secret da demo nel realm/compose. In
+  produzione: secret manager + rotazione.
 - **H2 in-memory** (`start-dev`): il realm è re-importato a ogni avvio (riproducibile), ma lo
   stato runtime (utenti/sessioni) è effimero. Produzione: DB esterno + `start`.
 - **Primo avvio ~30s**: Keycloak importa il realm; il login funziona dopo (la SPA resta usabile

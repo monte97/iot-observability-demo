@@ -17,6 +17,16 @@
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:8090/*"
       }
+    },
+    {
+      "clientId": "iot-device",
+      "name": "IoT Device (service account, client-credentials)",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "device-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     }
   ],
   "users": [

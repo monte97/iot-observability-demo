@@ -24,7 +24,7 @@ services:
   device-gateway:
     build: ./services/device-gateway
     ports: ["8080:8080"]
-    depends_on: [kafka, otel-collector]
+    depends_on: [kafka, otel-collector, keycloak]
     restart: on-failure
     networks: [observability]
   normalizer:
@@ -44,7 +44,7 @@ services:
     image: busybox:1.36
     volumes: ["./services/load-gen/gen.sh:/gen.sh:ro"]
     command: ["sh", "/gen.sh"]
-    depends_on: [device-gateway]
+    depends_on: [device-gateway, keycloak]
     networks: [observability]
   keycloak:
     image: quay.io/keycloak/keycloak:26.1
